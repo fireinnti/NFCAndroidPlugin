@@ -25,7 +25,7 @@ project/assembly_name="Android Plugin Demo"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/GodotAndroidNFCPlugin/plugin.cfg")
+enabled=PackedStringArray("res://addons/GodotAndroidNFCPlugin/plugin.cfg", "res://addons/GodotNfcAndroidPlugin/plugin.cfg")
 
 [rendering]
 

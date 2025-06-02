@@ -15,7 +15,7 @@ import org.godotengine.godot.plugin.UsedByGodot
 import org.godotengine.godot.plugin.SignalInfo
 import java.io.IOException
 
-class GodotNFC(godot: Godot) : GodotPlugin(godot) {
+class GodotAndroidPlugin(godot: Godot) : GodotPlugin(godot) {
 
     private var previousIntent: Intent? = null
     private var nfcAdapter: NfcAdapter? = null
@@ -30,20 +30,22 @@ class GodotNFC(godot: Godot) : GodotPlugin(godot) {
 
     override fun getPluginSignals(): Set<SignalInfo> {
         return setOf(
-            SignalInfo("nfc_enabled", Int::class.java),
+            SignalInfo("nfc_enabled", Integer::class.java),
             SignalInfo("tag_readed", ByteArray::class.java),
             SignalInfo("tag_written")
         )
     }
 
     @UsedByGodot
-    fun enableNFC() {
+    fun enableNFCV2() {
         runOnUiThread {
             val currentActivity = activity // Safely retrieve the nullable activity
             currentActivity?.let { nonNullActivity ->
+                Log.v(pluginName, "before nfc adapter")
 
                 nfcAdapter = NfcAdapter.getDefaultAdapter(nonNullActivity)
                 if (nfcAdapter == null) {
+                    Log.v(pluginName, "nfc adapter null")
                     status = -1
                 } else if (nfcAdapter!!.isEnabled) {
                     status = 1
@@ -58,12 +60,15 @@ class GodotNFC(godot: Godot) : GodotPlugin(godot) {
                     )
 
                     nfcAdapter!!.enableForegroundDispatch(nonNullActivity, pendingIntent, null, null)
+                    Log.v(pluginName, "send intent")
                 } else {
                     status = 0
                 }
+                Log.v(pluginName, "after nfc adapter")
 
                 // Emit the signal after setting the status
                 emitSignal("nfc_enabled", status)
+                Log.v(pluginName, "after signal")
             } ?: run {
                 // Handle the case where activity is null
                 Log.e("GodotNFC", "Activity is null, cannot enable NFC")
@@ -115,6 +120,8 @@ class GodotNFC(godot: Godot) : GodotPlugin(godot) {
         queuedWriteData = data
     }
 
+
+
     private fun writeTag(tag: Tag, data: ByteArray) {
         val relayRecord = NdefRecord.createTextRecord(null, String(data))
         val message = NdefMessage(arrayOf(relayRecord))
@@ -156,7 +163,7 @@ class GodotNFC(godot: Godot) : GodotPlugin(godot) {
      * Shows a 'Hello World' toast.
      */
     @UsedByGodot
-    private fun helloWorld() {
+    fun helloWorld() {
         runOnUiThread {
             Toast.makeText(activity, "Hello World", Toast.LENGTH_LONG).show()
             Log.v(pluginName, "Hello World")
