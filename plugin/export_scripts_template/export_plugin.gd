@@ -38,5 +38,22 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		else:
 			return PackedStringArray([])
 
+	func _get_android_manifest_activity_element_contents(platform, debug) -> String:
+			if not _supports_platform(platform):
+				return ""
+			var contents = """
+			<intent-filter>
+				<action android:name="android.nfc.action.NDEF_DISCOVERED" />
+				<category android:name="android.intent.category.DEFAULT" />
+				<data android:mimeType="text/plain" />
+			</intent-filter>
+
+			<intent-filter>
+				<action android:name="android.nfc.action.TAG_DISCOVERED" />
+				<category android:name="android.intent.category.DEFAULT" />
+			</intent-filter>"""
+			return contents
+
+
 	func _get_name():
 		return _plugin_name
