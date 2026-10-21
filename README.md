@@ -36,9 +36,9 @@ NFC is optional hardware and requires no runtime permission prompt. Foreground d
 
 Write an **NDEF URI record** for these examples, not a Text record containing the same URL:
 
-- `nfcgame://card/basic/red`
-- `nfcgame://card/power/blue/skip`
-- `nfcgame://card/token/easy`
+- `deadright://card/basic/red`
+- `deadright://card/power/blue/skip`
+- `deadright://card/token/easy`
 
 The companion game validates colors (`red`, `blue`, `orange`, `green`), power (`skip`) and token difficulty (`easy`, `hard`). Existing NDEF Text cards such as `basic,red`, `power,blue,skip`, and `token,easy` also work. UTF-8 and UTF-16 Text records, URI records, Smart Posters, and `text/plain` MIME records are decoded appropriately.
 
@@ -48,7 +48,7 @@ The addon exposes these Project Settings (enable Advanced Settings):
 
 ```ini
 [nfc]
-links/custom_scheme="nfcgame"
+links/custom_scheme="deadright"
 links/custom_host="card"
 links/web_host=""
 links/web_path_prefix="/nfc/"
@@ -81,8 +81,8 @@ On a connected Android device, install the game's APK and check both a stopped a
 
 ```powershell
 adb shell am force-stop com.nfc.testproject
-adb shell am start -W -a android.intent.action.VIEW -d 'nfcgame://card/basic/red'
-adb shell am start -W -a android.intent.action.VIEW -d 'nfcgame://card/token/hard'
+adb shell am start -W -a android.intent.action.VIEW -d 'deadright://card/basic/red'
+adb shell am start -W -a android.intent.action.VIEW -d 'deadright://card/token/hard'
 ```
 
 Do not specify `-n` or `-p` when checking system link resolution. For a configured web host:

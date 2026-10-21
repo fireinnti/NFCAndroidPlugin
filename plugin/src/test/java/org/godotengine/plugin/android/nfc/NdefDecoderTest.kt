@@ -22,7 +22,7 @@ class NdefDecoderTest {
     }
 
     @Test fun uriPrefixIsExpanded() {
-        for (uri in listOf("https://game.example/nfc/basic/red", "nfcgame://card/power/blue/skip")) {
+        for (uri in listOf("https://game.example/nfc/basic/red", "deadright://card/power/blue/skip")) {
             assertEquals(uri, NdefDecoder.decode(NdefRecord.createUri(uri)))
         }
     }

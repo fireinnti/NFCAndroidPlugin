@@ -4,9 +4,9 @@ extends EditorPlugin
 var export_plugin: AndroidExportPlugin
 
 func _enter_tree() -> void:
-	for key in {"nfc/links/custom_scheme": "nfcgame", "nfc/links/custom_host": "card", "nfc/links/web_host": "", "nfc/links/web_path_prefix": "/nfc/"}:
+	for key in {"nfc/links/custom_scheme": "deadright", "nfc/links/custom_host": "card", "nfc/links/web_host": "", "nfc/links/web_path_prefix": "/nfc/"}:
 		if not ProjectSettings.has_setting(key):
-			var value = {"nfc/links/custom_scheme": "nfcgame", "nfc/links/custom_host": "card", "nfc/links/web_host": "", "nfc/links/web_path_prefix": "/nfc/"}[key]
+			var value = {"nfc/links/custom_scheme": "deadright", "nfc/links/custom_host": "card", "nfc/links/web_host": "", "nfc/links/web_path_prefix": "/nfc/"}[key]
 			ProjectSettings.set_setting(key, value)
 			ProjectSettings.set_initial_value(key, value)
 		ProjectSettings.add_property_info({"name": key, "type": TYPE_STRING})
@@ -28,7 +28,7 @@ class AndroidExportPlugin extends EditorExportPlugin:
 		return PackedStringArray(["res://addons/%s/bin/%s/%s-%s.aar" % [PLUGIN_NAME, variant, PLUGIN_NAME, variant]])
 
 	func _get_android_manifest_application_element_contents(_platform: EditorExportPlatform, _debug: bool) -> String:
-		var scheme := str(ProjectSettings.get_setting("nfc/links/custom_scheme", "nfcgame")).xml_escape(true)
+		var scheme := str(ProjectSettings.get_setting("nfc/links/custom_scheme", "deadright")).xml_escape(true)
 		var host := str(ProjectSettings.get_setting("nfc/links/custom_host", "card")).xml_escape(true)
 		var web_host := str(ProjectSettings.get_setting("nfc/links/web_host", "")).strip_edges().xml_escape(true)
 		var path := str(ProjectSettings.get_setting("nfc/links/web_path_prefix", "/nfc/")).xml_escape(true)
