@@ -1,99 +1,108 @@
-# Godot Android Plugin Template
-This repository serves as a quickstart template for building a Godot Android plugin for Godot 4.2+.
+# Godot Android NFC plugin
 
-## Contents
-* An illustrative simple Godot project: [`plugin/demo`](plugin/demo)
-* Preconfigured gradle build file to build and package the contents for the Android plugin: 
-  [`plugin/build.gradle.kts`](plugin/build.gradle.kts)
-* Preconfigured export scripts template: 
-  [`plugin/export_scripts_template`](plugin/export_scripts_template)
-* Preconfigured manifest for the Android plugin:
-  [`plugin/src/main/AndroidManifest.xml`](plugin/src/main/AndroidManifest.xml)
-* Preconfigured source files for the Kotlin/Java logic of the Android plugin: 
-  [`plugin/src/main/java`](plugin/src/main/java)
+Android plugin v2 for Godot **4.7.2 stable**, Kotlin/JDK 17, Android Gradle Plugin 8.9.1 and Gradle 8.11.1. The library compiles against SDK 35 with minimum SDK 24; the game's matching Godot export template determines its final device requirements (the 4.7.2 default export uses API 29+ and targets API 36).
 
-## Usage
-**Note:** [Android Studio](https://developer.android.com/studio) is the recommended IDE for
-developing Godot Android plugins. 
-You can install the latest version from https://developer.android.com/studio.
+## Build and install
 
-To use this template, log in to github and click the green "Use this template" button at the top 
-of the repository page.
-This will let you create a copy of this repository with a clean git history.
+Set `JAVA_HOME` to JDK 17 and configure `sdk.dir` in the untracked `local.properties` (or `ANDROID_HOME`). Then run:
 
-### Configuring the template
-After cloning your own copy to your local machine, configure the project as needed. Several 
-`TODO` have been added to the project to help identify where changes are needed; here's an 
-overview of the minimum set of modifications needed:
-* Update the name of the Android plugin. Note that the name should not contain any spaces:
-  * Open [`settings.gradle.kts`](settings.gradle.kts) and update the value for `rootProject.name`
-  * Open [`plugin/build.gradle.kts`](plugin/build.gradle.kts) and update the value for `pluginName`
-  * Open [`plugin/export_scripts_template/plugin.cfg`](plugin/export_scripts_template/plugin.cfg)
-    and update the value for `name`
-  * Open [`plugin/export_scripts_template/export_plugin.gd`](plugin/export_scripts_template/export_plugin.gd)
-    and update the value for `_plugin_name`
-* Update the package name of the Android plugin:
-  * Open [`plugin/build.gradle.kts`](plugin/build.gradle.kts) and update the value for `pluginPackageName`
-  * Make sure subdirectories under [`plugin/src/main/java`](plugin/src/main/java) match the 
-    updated package name
-  * Make sure that `package` at the top of [`GodotAndroidPlugin.kt`](plugin/src/main/java/org/godotengine/plugin/android/nfc/GodotAndroidPlugin.kt)
-    matches the updated package name
-* Complete the plugin configuration
-  * Open [`plugin/export_scripts_template/plugin.cfg`](plugin/export_scripts_template/plugin.cfg)
-    * Update the `description` field
-    * Update the `author` field
-    * Update the `version` field
-
-### Building the configured Android plugin
-- In a terminal window, navigate to the project's root directory and run the following command:
-```
-./gradlew assemble
-```
-- On successful completion of the build, the output files can be found in
-  [`plugin/demo/addons`](plugin/demo/addons)
-
-### Testing the Android plugin
-You can use the included [Godot demo project](plugin/demo/project.godot) to test the built Android 
-plugin
-
-- Open the demo in Godot (4.2 or higher)
-- Navigate to `Project` -> `Project Settings...` -> `Plugins`, and ensure the plugin is enabled
-- Install the Godot Android build template by clicking on `Project` -> `Install Android Build Template...`
-- Open [`plugin/demo/main.gd`](plugin/demo/main.gd) and update the logic as needed to reference 
-  your plugin and its methods
-- Connect an Android device to your machine and run the demo on it
-
-#### Tips
-Additional dependencies added to [`plugin/build.gradle.kts`](plugin/build.gradle.kts) should be added to the `_get_android_dependencies`
-function in [`plugin/export_scripts_template/export_plugin.gd`](plugin/export_scripts_template/export_plugin.gd).
-
-##### Simplify access to the exposed Java / Kotlin APIs
-
-To make it easier to access the exposed Java / Kotlin APIs in the Godot Editor, it's recommended to 
-provide one (or multiple) gdscript wrapper class(es) for your plugin users to interface with.
-
-For example:
-
-```
-class_name PluginInterface extends Object
-
-## Interface used to access the functionality provided by this plugin
-
-var _plugin_name = "GDExtensionAndroidPluginTemplate"
-var _plugin_singleton
-
-func _init():
-	if Engine.has_singleton(_plugin_name):
-		_plugin_singleton = Engine.get_singleton(_plugin_name)
-	else:
-		printerr("Initialization error: unable to access the java logic")
-
-## Shows a 'Hello World' toast.
-func helloWorld():
-	if _plugin_singleton:
-		_plugin_singleton.helloWorld()
-	else:
-		printerr("Initialization error")
-
+```powershell
+.\gradlew.bat :plugin:assemble :plugin:testDebugUnitTest :plugin:lintDebug
+.\update-game-plugin.ps1 # Builds and copies both variants and scripts to ../NFCGame
 ```
 
+The complete addon is generated at `plugin/demo/addons/GodotAndroidNFCPlugin`. Enable it in Godot's Plugins settings and enable Gradle Build in Android export settings. Use the editor and export templates from the same Godot release. The Godot library is `compileOnly`: the exported game supplies the engine, avoiding duplicate engine classes.
+
+The demo displays decoded scans and NFC availability. This plugin does not write tags.
+
+## API
+
+Connect before enabling; enabling drains the bounded queue of scans received while Godot was starting:
+
+```gdscript
+var nfc = Engine.get_singleton("GodotAndroidNFCPlugin")
+nfc.connect("tag_read", func(text: String): print(text))
+nfc.connect("nfc_error", func(message: String): push_warning(message))
+nfc.enableNFC()
+```
+
+Methods: `enableNFC()`, `disableNFC()`, `isNFCAvailable()`, `isNFCEnabled()`.
+
+Signals: `tag_read(String)`, `nfc_error(String)`, and legacy `tag_readed(PackedByteArray)`. Legacy bytes now contain decoded UTF-8, without NDEF status/language headers. Subscribe to one read signal to avoid processing a scan twice.
+
+NFC is optional hardware and requires no runtime permission prompt. Foreground dispatch is enabled on resume and disabled on pause. There is no polling thread and no dependence on a hardcoded Godot activity. The bridge activity queues incoming values before launching the actual package launcher. Unsupported records (including Android Application Records) are ignored. Empty/unformatted tags have no card value and are ignored.
+
+## Links and card tags
+
+Write an **NDEF URI record** for these examples, not a Text record containing the same URL:
+
+- `nfcgame://card/basic/red`
+- `nfcgame://card/power/blue/skip`
+- `nfcgame://card/token/easy`
+
+The companion game validates colors (`red`, `blue`, `orange`, `green`), power (`skip`) and token difficulty (`easy`, `hard`). Existing NDEF Text cards such as `basic,red`, `power,blue,skip`, and `token,easy` also work. UTF-8 and UTF-16 Text records, URI records, Smart Posters, and `text/plain` MIME records are decoded appropriately.
+
+Android uses the first NDEF record for dispatch: put the URI first when using multiple records. A Text record with a URL does not get URI routing. Legacy `text/plain` tags may show an app chooser because other NFC apps also register for that type. Custom schemes need no website, but another installed app can register the same scheme.
+
+The addon exposes these Project Settings (enable Advanced Settings):
+
+```ini
+[nfc]
+links/custom_scheme="nfcgame"
+links/custom_host="card"
+links/web_host=""
+links/web_path_prefix="/nfc/"
+```
+
+Keep scheme/host lowercase. `web_host` is a hostname only, without scheme or path; `web_path_prefix` must begin and end with `/`. The game and export plugin read the same settings.
+
+### Verified Android App Links
+
+For links such as `https://YOUR-DOMAIN/nfc/basic/red`, set `nfc/links/web_host` to a domain you control. The exporter adds scoped HTTP/HTTPS `VIEW` filters with `autoVerify=true`, plus matching NFC `NDEF_DISCOVERED` filters. Android 16+ dispatches NFC web URLs using `ACTION_VIEW`; older Android uses `ACTION_NDEF_DISCOVERED`.
+
+Host this JSON at `https://YOUR-DOMAIN/.well-known/assetlinks.json`, replacing the fingerprint with the SHA-256 fingerprint of the actual app signing certificate:
+
+```json
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.nfc.testproject",
+    "sha256_cert_fingerprints": ["YOUR:SHA256:SIGNING:CERTIFICATE:FINGERPRINT"]
+  }
+}]
+```
+
+With Play App Signing, use the Play app signing certificate, not the upload certificate. Debug APKs have a different signing certificate. No web domain is configured by default, and this repository does not publish the association file. A manifest filter alone cannot verify website ownership; an unverified web link can open the browser.
+
+## Verification
+
+On a connected Android device, install the game's APK and check both a stopped app and an already-running app:
+
+```powershell
+adb shell am force-stop com.nfc.testproject
+adb shell am start -W -a android.intent.action.VIEW -d 'nfcgame://card/basic/red'
+adb shell am start -W -a android.intent.action.VIEW -d 'nfcgame://card/token/hard'
+```
+
+Do not specify `-n` or `-p` when checking system link resolution. For a configured web host:
+
+```powershell
+adb shell pm verify-app-links --re-verify com.nfc.testproject
+adb shell pm get-app-links com.nfc.testproject
+```
+
+Also scan real Text and URI tags with the app stopped, on the selection screen, and after pausing/resuming. Repeated physical scans should each work. The game ignores gameplay commands during setup and active questions. On the main menu, a valid card opens selection and applies the card. The setup NFC test displays received text.
+
+Automated coverage includes NDEF text headers/encoding, URI prefix decoding, malformed payloads, unsupported records, and intent handling on API 24 and 35. The game has parser and scene-flow tests under `../NFCGame/tests`.
+
+## Documentation used
+
+- [Godot Android plugins](https://docs.godotengine.org/en/stable/tutorials/platform/android/android_plugin.html)
+- [Godot Android export](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html)
+- [Android NFC dispatch and NDEF](https://developer.android.com/develop/connectivity/nfc/nfc)
+- [Android foreground dispatch](https://developer.android.com/develop/connectivity/nfc/advanced-nfc)
+- [Android App Links](https://developer.android.com/training/app-links/add-applinks)
+- [Website association](https://developer.android.com/training/app-links/configure-assetlinks)
+
+Use the SDK/NDK versions in the installed 4.7.2 `android_source.zip` as the authority for the game export: SDK 36, Build Tools 36.1.0 and NDK 29.0.14206865. Some stable documentation pages still list older SDK versions.
