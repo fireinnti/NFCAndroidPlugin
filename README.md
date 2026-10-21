@@ -92,7 +92,7 @@ adb shell pm verify-app-links --re-verify com.nfc.testproject
 adb shell pm get-app-links com.nfc.testproject
 ```
 
-Also scan real Text and URI tags with the app stopped, on the selection screen, and after pausing/resuming. Repeated physical scans should each work. The game ignores gameplay commands during setup and active questions. On the main menu, a valid card opens selection and applies the card. The setup NFC test displays received text.
+Also scan real Text and URI tags with the app stopped, on the selection screen, and after pausing/resuming. Repeated physical scans should each work. A tag opens or brings forward the game, but gameplay commands apply only on its scan/selection screen. Startup, main-menu, setup and active-question scans are ignored for gameplay and are not replayed later. The setup NFC test displays received text.
 
 Automated coverage includes NDEF text headers/encoding, URI prefix decoding, malformed payloads, unsupported records, and intent handling on API 24 and 35. The game has parser and scene-flow tests under `../NFCGame/tests`.
 
