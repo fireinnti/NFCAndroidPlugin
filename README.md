@@ -34,11 +34,28 @@ NFC is optional hardware and requires no runtime permission prompt. Foreground d
 
 ## Links and card tags
 
-Write an **NDEF URI record** for these examples, not a Text record containing the same URL:
+Write an **NDEF URI record** in NFC Tools (custom URI/URL), not a Text record containing the same URL. Use these formats:
 
-- `deadright://card/basic/red`
-- `deadright://card/power/blue/skip`
-- `deadright://card/token/easy`
+| Card | URI format | Effect on the scan/selection screen |
+| --- | --- | --- |
+| Basic | `deadright://card/basic/<color>` | Starts a question from the category mapped to that color. |
+| Skip power | `deadright://card/power/<color>/skip` | Uses that color's category and plays the skip animation when animations are enabled, then starts a question. |
+| Difficulty token | `deadright://card/token/<difficulty>` | Sets the next question's difficulty; scan a basic or power card afterward. |
+
+Replace `<color>` with `red`, `blue`, `orange`, or `green`; replace `<difficulty>` with `easy` or `hard`. Do not write the angle-bracket placeholders to a tag. `skip` is currently the only supported power; `placehold` is not accepted.
+
+Copy-ready examples:
+
+```text
+deadright://card/basic/red
+deadright://card/power/red/skip
+deadright://card/token/easy
+deadright://card/token/hard
+```
+
+Use lowercase and the exact path shown, without a trailing slash, query string, or fragment. Rewrite old `nfcgame://` URI tags to use `deadright://`.
+
+In `deadright://card/power/red/skip`, `deadright` is the app scheme, `card` is the host, and `power/red/skip` is the card data. The game validates the URI and turns that path into `["power", "red", "skip"]` before passing it to the selection scene. A URI scan opens or brings forward the app, but applies the card only on the scan/selection screen; scans elsewhere are not queued for later.
 
 The companion game validates colors (`red`, `blue`, `orange`, `green`), power (`skip`) and token difficulty (`easy`, `hard`). Existing NDEF Text cards such as `basic,red`, `power,blue,skip`, and `token,easy` also work. UTF-8 and UTF-16 Text records, URI records, Smart Posters, and `text/plain` MIME records are decoded appropriately.
 
